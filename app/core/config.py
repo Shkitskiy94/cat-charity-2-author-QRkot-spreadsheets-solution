@@ -11,11 +11,7 @@ class Settings(BaseSettings):
     first_superuser_email: Optional[EmailStr] = None
     first_superuser_password: Optional[str] = None
     secret: str = 'SECRET'
-    yandex_client_id: str
-    yandex_client_secret: str
-    yandex_redirect_uri: str
-    yandex_disk_token: str
-    yandex_email: str
+    yandex_disk_token: Optional[str] = None
     report_format: str = '%d.%m.%Y %H:%M:%S'
 
     model_config = SettingsConfigDict(env_file='.env')

@@ -1,5 +1,7 @@
+from fastapi import HTTPException, status
 from typing import Optional
 import httpx
+
 
 
 class YandexDiskClient:
@@ -34,14 +36,21 @@ class YandexDiskClient:
         )
         response.raise_for_status()
 
-        return response.json()["href"], file_path
+        data = response.json()
+        upload_url = data.get("href")
+
+        if not upload_url:
+            raise ValueError("Не удалось получить ссылку для загрузки")
+
+        return upload_url, file_path
 
     async def upload_file(self, upload_url: str, content: bytes):
         """Загружает файл по полученной ссылке"""
         response = await self._client.put(
             upload_url,
             content=content,
-            headers={"Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+            headers={"Content-Type": "application/vnd.openxmlformats-"
+                                     "officedocument"".spreadsheetml.sheet"}
         )
         response.raise_for_status()
 
@@ -63,7 +72,16 @@ class YandexDiskClient:
         response.raise_for_status()
 
         data = response.json()
-        return data.get("public_url", f"https://disk.yandex.ru/client/disk/QRKot Reports/{file_path.split('/')[-1]}")
+        public_url = data.get("public_url")
+        if not public_url:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Ссылка не была получена со стороны Яндекс Диска"
+            )
+
+        return data.get("public_url",
+                        "https://disk.yandex.ru/client/disk/QRKot "
+                        f"Reports/{file_path.split('/')[-1]}")
 
     async def _create_folder(self):
         """Создаёт папку для отчётов, если её нет"""
@@ -82,6 +100,13 @@ class YandexDiskClient:
 async def get_yandex_client():
     """Dependency для получения клиента Яндекс.Диска"""
     from app.core.config import settings
+
+    if settings.yandex_disk_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Яндекс.Диск не настроен. Пожалуйста, "
+                   "добавьте YANDEX_DISK_TOKEN в .env файл"
+        )
 
     async with YandexDiskClient(settings.yandex_disk_token) as client:
         yield client
