@@ -21,6 +21,6 @@ if __name__ == '__main__':
             'Не удалось создать суперпользователя. Создайте '
             'суперпользователя самостоятельно, используя следующие учетные '
             'данные:\n'
-            'email: root@admin.ru\n'
-            'password: root'
+            'email: admin@admin.ru\n'
+            'password: admin'
         )
